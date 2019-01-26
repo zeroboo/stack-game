@@ -12,12 +12,15 @@ public class GameConfig{
 
     [SerializeField]
     float emitForce;
-    public GameConfig(float blockHeight, float blockEmitInterval, float statePlayingPrepareSecond, float emitForce)
+
+    float maxBlockTravelDistance;
+    public GameConfig(float blockHeight, float blockEmitInterval, float statePlayingPrepareSecond, float emitForce, float maxBlockTravelDistance)
     {
         this.blockHeight = blockHeight;
         this.blockEmitIntervalSecond = blockEmitInterval;
         this.statePlayingPrepareSecond = statePlayingPrepareSecond;
         this.emitForce = emitForce;
+        this.maxBlockTravelDistance = maxBlockTravelDistance;
     }
 
     public static GameConfig CreateDefaultGameConfig()
@@ -26,6 +29,7 @@ public class GameConfig{
             , 1
             , 2///statePlayingPrepareSecond
             , 2
+            , 20//maxBlockTravelDistance 
             );
 
         return config;
@@ -51,4 +55,10 @@ public class GameConfig{
         get { return emitForce; }
         set { this.emitForce = value; }
     }
+    public float MaxBlockTravelDistance
+    {
+        get { return maxBlockTravelDistance; }
+        set { this.maxBlockTravelDistance = value; }
+    }
+    
 }

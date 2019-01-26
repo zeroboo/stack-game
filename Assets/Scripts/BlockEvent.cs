@@ -8,5 +8,5 @@ using UnityEngine.Events;
 public class BlockEvent : UnityEvent<Block> { }
 
 [Serializable]
-public class BlockOnBlockEvent : UnityEvent<Block, Block> { }
+public class BlockOnBlockEvent : UnityEvent<Block, Block, Collision> { }
 

@@ -22,5 +22,11 @@ public class BlockEmiter : MonoBehaviour {
     }
     public Vector3 EmitDirection { get {return emitDirection; }}
 
+    public void OnDrawGizmos()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawCube(this.transform.position, new Vector3(1, 1, 1));
+        Gizmos.DrawLine(this.transform.position, this.emitDirection);
+    }
 
 }

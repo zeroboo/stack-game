@@ -4,6 +4,6 @@ using UnityEngine;
 
 public enum GameState{
 
-    Menu, Playing, Summary
+    Menu, Play, Summary
 
 }
