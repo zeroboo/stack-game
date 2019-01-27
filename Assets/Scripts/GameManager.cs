@@ -109,7 +109,8 @@ public class GameManager : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-		
+        GameObject obj = GameObject.Find("Block-Ex1");
+        
 	}
 	
 	// Update is called once per frame
@@ -204,7 +205,7 @@ public class GameManager : MonoBehaviour {
         Vector3 newPos = this.leftEmiter.transform.position;
         newPos.y = this.newHeight;
         this.leftEmiter.transform.position = newPos;
-        Debug.Log(string.Format("UpdateEmiterPosition: stack={0}, height={1}, emiter={2}", this.blockStack.Count, currentHeight, leftEmiter.transform.position));
+        ///Debug.Log(string.Format("UpdateEmiterPosition: stack={0}, height={1}, emiter={2}", this.blockStack.Count, currentHeight, leftEmiter.transform.position));
         
     }
 
@@ -223,7 +224,7 @@ public class GameManager : MonoBehaviour {
         {
             if (Time.time - this.timeLastEmit > config.BlockEmitIntervalSecond && this.flyingBlock == null)
             {
-                EmitBlock();
+                ///EmitBlock();
                 UpdateEmiterPosition();
             }
 
@@ -303,6 +304,15 @@ public class GameManager : MonoBehaviour {
         {
             Debug.Log(string.Format("\t- CollisionContact: {0}", collision.contacts[i].point));
         }
+        
+        ///Debug.DrawRay(collision.contacts[0].point, collision.contacts[1].point, Color.blue, 600, true);
+
+        Debug.DrawLine(collision.contacts[0].point, collision.contacts[2].point, Color.red, 600, true);
+        Debug.DrawLine(collision.contacts[1].point, collision.contacts[2].point, Color.green, 600, true);
+        Debug.DrawLine(collision.contacts[1].point, collision.contacts[3].point, Color.blue, 600, true);
+        Debug.DrawLine(collision.contacts[0].point, collision.contacts[3].point, Color.yellow, 600, true);
+
+
     }
     public void OnDrawGizmos()
     {

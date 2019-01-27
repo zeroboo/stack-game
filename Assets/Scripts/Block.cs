@@ -32,7 +32,7 @@ public class Block : MonoBehaviour {
 
     // Use this for initialization
     void Start() {
-
+        
     }
 
     // Update is called once per frame
@@ -49,6 +49,7 @@ public class Block : MonoBehaviour {
         this.isFlying = false;
         body.velocity = Vector3.down*20;
         body.isKinematic = true;
+        Debug.Log(string.Format("BlockStopFlyingAndFall: {0}", body.velocity));
     }
     public void SetOnStack()
     {
@@ -59,12 +60,15 @@ public class Block : MonoBehaviour {
     {
         //Vector3 edge = collision.contacts[0].point - collision.contacts[1].point;
 
-        ///Debug.Log(string.Format("- Edge: {0}", edge.ToString()));
+        Debug.Log(string.Format("Block.ProcessCollision: {0} ({1}|{2}) on {3}({4})", name
+            , isFlying?"Flying":"", IsOnStack?"OnStack":""
+            , collision.gameObject.name, collision.gameObject.tag
+            ));
         if (!this.isFlying && !this.isOnStack)
         {
             body = GetComponent<Rigidbody>();
 
-            if (collision.gameObject.name.Equals("Ground"))
+            if (collision.gameObject.tag.Equals("Ground"))
             {
                 isOnGround = true;
                 if (onGroundListener != null)
@@ -79,6 +83,10 @@ public class Block : MonoBehaviour {
                 {
                     onBlockListener.Invoke(this, targetBlock, collision);
                 }
+                else {
+                    Debug.Log(string.Format("- NoListener!"));
+                }
+
                 foreach (ContactPoint point in collision.contacts)
                 {
                     Debug.Log(string.Format("- Point: {0}", point.point.ToString()));
@@ -144,5 +152,19 @@ public class Block : MonoBehaviour {
         get { return this.IsOnGround; }
         set { this.IsOnGround = value; }
     }
+    public void OnDrawGizmos()
+    {
+        MeshFilter mesh = GetComponent<MeshFilter>();
 
+        Gizmos.color = Color.red;
+        Gizmos.DrawCube(transform.TransformPoint(mesh.sharedMesh.vertices[0]), new Vector3(0.1f, 0.1f, 0.1f));
+        Gizmos.DrawCube(transform.TransformPoint(mesh.sharedMesh.vertices[1]), new Vector3(0.1f, 0.1f, 0.1f));
+        Gizmos.DrawCube(transform.TransformPoint(mesh.sharedMesh.vertices[2]), new Vector3(0.1f, 0.1f, 0.1f));
+        Gizmos.DrawCube(transform.TransformPoint(mesh.sharedMesh.vertices[3]), new Vector3(0.1f, 0.1f, 0.1f));
+        Gizmos.DrawCube(transform.TransformPoint(mesh.sharedMesh.vertices[4]), new Vector3(0.1f, 0.1f, 0.1f));
+        Gizmos.DrawCube(transform.TransformPoint(mesh.sharedMesh.vertices[5]), new Vector3(0.1f, 0.1f, 0.1f));
+        Gizmos.DrawCube(transform.TransformPoint(mesh.sharedMesh.vertices[6]), new Vector3(0.1f, 0.1f, 0.1f));
+        Gizmos.DrawCube(transform.TransformPoint(mesh.sharedMesh.vertices[7]), new Vector3(0.1f, 0.1f, 0.1f));
+       
+    }
 }
