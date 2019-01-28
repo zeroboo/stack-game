@@ -253,8 +253,16 @@ public class GameManager : MonoBehaviour {
                 {
                      this.flyingBlock.StartFalling();
                 }
+
+                if (this.flyingBlock.IsOnStack)
+                {
+                    this.flyingBlock = null;
+                    this.timeLastEmit = Time.time;
+                }
             }
-            
+
+
+            Debug.Log(string.Format("Playing: {0}", this.flyingBlock.ToString()));
         }
     }
 

@@ -5,6 +5,7 @@ using UnityEngine.Events;
 public class Block : MonoBehaviour {
     bool isOnStack = false;
     bool isOnGround = false;
+
     bool isFlying = false;
     bool isFalling = false;
     BlockEvent onGroundListener;
@@ -23,7 +24,7 @@ public class Block : MonoBehaviour {
         isOnStack = false;
         isOnGround = false;
         isFlying = false;
-        isFalling = true;
+        isFalling = false;
         onGroundListener = new BlockEvent();
         onBlockListener = new BlockOnBlockEvent();
         this.body = GetComponent<Rigidbody>();
@@ -46,20 +47,24 @@ public class Block : MonoBehaviour {
     public void StartFlying()
     {
         this.isFlying = true;
+        this.isFalling = false;
         this.body.isKinematic = false;
     }
     public void StopFlying()
     {
         this.isFlying = false;
+        
         body.velocity = Vector3.zero;
-        ///body.isKinematic = true;
+        
         Debug.Log(string.Format("BlockStopFlying: {0}", body.velocity));
     }
     public void StartFalling()
     {
         this.isFalling = true;
-        body.velocity = Vector3.down * 100;
-        body.isKinematic = true;
+        
+        Vector3 newVelocity = Vector3.down * 10;
+        body.velocity = newVelocity;
+        
         Debug.Log(string.Format("StartFalling: {0}", body.velocity));
     }
     public void SetOnStack()
@@ -82,6 +87,7 @@ public class Block : MonoBehaviour {
             if (collision.gameObject.tag.Equals("Ground"))
             {
                 isOnGround = true;
+                body.isKinematic = true;
                 if (onGroundListener != null)
                 {
                     onGroundListener.Invoke(this);
@@ -89,6 +95,7 @@ public class Block : MonoBehaviour {
             }
             else if (collision.gameObject.tag.Equals("Block"))
             {
+                body.isKinematic = true;
                 Block targetBlock = collision.gameObject.GetComponent<Block>();
                 if (onBlockListener != null)
                 {
@@ -214,5 +221,15 @@ public class Block : MonoBehaviour {
         this.type = BLOCK_TYPE_PLAY;
     }
 
-
+    public string ToString()
+    {
+        return string.Format("{0}{1}{2}{3}, pos={4}, velocity={5}"
+            , isFlying? "flying":""
+            , isFalling? "falling":""
+            , isOnGround? "onground":""
+            , isOnStack? "onstack":""
+            , transform.position
+            , transform.GetComponent<Rigidbody>().velocity
+            );
+    }
 }
