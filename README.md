@@ -1,5 +1,5 @@
 # stack-game
-A demo of stack game by ketchapp (https://www.youtube.com/watch?v=x3FeMFMAj9o]).
+A demo of stack game by ketchapp (https://www.youtube.com/watch?v=x3FeMFMAj9o]).  
 Created in Unity.
 
 
