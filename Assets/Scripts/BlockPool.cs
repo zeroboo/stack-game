@@ -28,9 +28,9 @@ public class BlockPool {
         block.gameObject.active = false;
         return block;
     }
-    public Block GetBlock()
+    public Block GetPlayingBlock()
     {
-        Block newBlock = null;
+        Block newBlock = null;  
         for (int i = 0; i < allBlock.Count; i++)
         {
             if (!allBlock[i].IsActive())
@@ -45,7 +45,7 @@ public class BlockPool {
         }
         newBlock.OnBlockListener.RemoveAllListeners();
         newBlock.OnGroundListener.RemoveAllListeners();
-        
+        newBlock.SetBlockTypePlay();
         return newBlock;
     }
 

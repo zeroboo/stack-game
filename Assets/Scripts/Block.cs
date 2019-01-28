@@ -6,6 +6,7 @@ public class Block : MonoBehaviour {
     bool isOnStack = false;
     bool isOnGround = false;
     bool isFlying = false;
+    bool isFalling = false;
     BlockEvent onGroundListener;
     [SerializeField]
     BlockOnBlockEvent onBlockListener;
@@ -22,6 +23,7 @@ public class Block : MonoBehaviour {
         isOnStack = false;
         isOnGround = false;
         isFlying = false;
+        isFalling = true;
         onGroundListener = new BlockEvent();
         onBlockListener = new BlockOnBlockEvent();
         this.body = GetComponent<Rigidbody>();
@@ -49,9 +51,16 @@ public class Block : MonoBehaviour {
     public void StopFlying()
     {
         this.isFlying = false;
-        body.velocity = Vector3.down*20;
+        body.velocity = Vector3.zero;
+        ///body.isKinematic = true;
+        Debug.Log(string.Format("BlockStopFlying: {0}", body.velocity));
+    }
+    public void StartFalling()
+    {
+        this.isFalling = true;
+        body.velocity = Vector3.down * 100;
         body.isKinematic = true;
-        Debug.Log(string.Format("BlockStopFlyingAndFall: {0}", body.velocity));
+        Debug.Log(string.Format("StartFalling: {0}", body.velocity));
     }
     public void SetOnStack()
     {
@@ -147,6 +156,11 @@ public class Block : MonoBehaviour {
     {
         get { return this.isFlying; }
         set { this.isFlying = value; }
+    }
+    public bool IsFalling
+    {
+        get { return this.isFalling; }
+        set { this.isFalling = value; }
     }
 
     public bool IsOnGround

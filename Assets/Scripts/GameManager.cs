@@ -101,7 +101,7 @@ public class GameManager : MonoBehaviour {
         this.score = 0;
         
         ///Setup first block
-        Block genesisBlock = blockPool.GetBlock();
+        Block genesisBlock = blockPool.GetPlayingBlock();
         genesisBlock.SetActive();
 
         Vector3 pos = this.fallingPoint;
@@ -165,18 +165,14 @@ public class GameManager : MonoBehaviour {
 
         ///Setup new block
         blockCounter++;
-        Block newBlock = blockPool.GetBlock();
+        Block newBlock = blockPool.GetPlayingBlock();
         
         newBlock.name = "flying-block-" + blockCounter;
-        Rigidbody blockBody = newBlock.GetComponent<Rigidbody>();
-        blockBody.mass = 0.1f;
-        blockBody.useGravity = false;
-        blockBody.isKinematic = false;
         newBlock.SetActive();
 
         ///a little higher than emiter
         Vector3 newPos = this.leftEmiter.transform.position;
-        newPos.y += newBlock.transform.localScale.y/2;
+        newPos.y += newBlock.transform.localScale.y/2 + 0.1f;
         newBlock.transform.position = newPos;
         Debug.Log(string.Format("EmitBlock: emitter={0}, newBlock={1}", newBlock.transform.position.ToString(), newBlock.transform.position));
 
@@ -185,7 +181,15 @@ public class GameManager : MonoBehaviour {
         newBlock.OnBlockListener.AddListener(HandleBlockOnBlock);
 
         ///Fly bro
-        blockBody.AddForce(this.leftEmiter.EmitDirection * config.EmitForce, ForceMode.Impulse);
+        Rigidbody blockBody = newBlock.GetComponent<Rigidbody>();
+        blockBody.mass = 0.1f;
+        blockBody.useGravity = false;
+        blockBody.isKinematic = true;
+
+        blockBody.velocity = this.leftEmiter.EmitDirection * config.EmitForce;
+        ///blockBody.AddForce(this.leftEmiter.EmitDirection * config.EmitForce, ForceMode.Impulse);
+
+
         newBlock.StartFlying();
         ///Record
         this.timeLastEmit = Time.time;
@@ -231,15 +235,25 @@ public class GameManager : MonoBehaviour {
             }
 
             ///User stop flying block
-            if (Input.GetAxis("Jump") == 1 && this.flyingBlock != null)
+            if (this.flyingBlock != null && this.flyingBlock.IsFlying)
             {
                 Debug.Log("InputAxis: " + Input.GetAxis("Jump"));
-                Debug.Log("Stop!!!");
-                this.flyingBlock.StopFlying();
+                if (Input.GetAxis("Jump") == 1)
+                {
+                    this.flyingBlock.StopFlying();
+                }
                 blockStopped.Add(this.flyingBlock);
-                this.flyingBlock = null;
+                
+                ///this.flyingBlock = null;
             }
 
+            if (this.flyingBlock != null)
+            {
+                if (!this.flyingBlock.IsFlying && !this.flyingBlock.IsFalling)
+                {
+                     this.flyingBlock.StartFalling();
+                }
+            }
             
         }
     }
