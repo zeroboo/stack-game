@@ -26,7 +26,7 @@ public class GameConfig{
     public static GameConfig CreateDefaultGameConfig()
     {
         GameConfig config = new GameConfig(1
-            , 1
+            , 1///blockEmitInterval
             , 2///statePlayingPrepareSecond
             , 2
             , 20//maxBlockTravelDistance 

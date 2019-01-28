@@ -8,7 +8,7 @@ public class GameManager : MonoBehaviour {
     private void Awake()
     {
         DontDestroyOnLoad(gameObject);
-        Init();    
+        Init();
     }
 
 
@@ -16,7 +16,7 @@ public class GameManager : MonoBehaviour {
     public GameManager()
     {
         Debug.Log("GameManager.Constructor");
-        
+
 
     }
     [SerializeField]
@@ -25,7 +25,7 @@ public class GameManager : MonoBehaviour {
     [SerializeField]
     GameConfig config;
 
-    
+
 
     [SerializeField]
     BlockEmiter leftEmiter;
@@ -39,7 +39,7 @@ public class GameManager : MonoBehaviour {
     Text scoreText;
     [SerializeField]
     Vector3 fallingPoint;
-    
+
 
     GameState gameState;
     GamePlayState playState;
@@ -54,11 +54,12 @@ public class GameManager : MonoBehaviour {
     float currentHeight = 0;
     Vector3 currentRoot = Vector3.zero;
     int score;
-    
+    BlockPool blockPool;
 
     public void Init()
     {
         this.config = GameConfig.CreateDefaultGameConfig();
+        this.blockPool = new BlockPool(this.sampleBlock, 100);
 
         this.gameState = GameState.Play;
         this.playState = GamePlayState.Prepare;
@@ -98,8 +99,11 @@ public class GameManager : MonoBehaviour {
         this.topBlock = null;
         this.blockCounter = 0;
         this.score = 0;
+        
         ///Setup first block
-        Block genesisBlock = GetNewBlock();
+        Block genesisBlock = blockPool.GetBlock();
+        genesisBlock.SetActive();
+
         Vector3 pos = this.fallingPoint;
         pos.y = this.fallingPoint.y + genesisBlock.transform.localScale.y/2;
         genesisBlock.transform.position = pos;
@@ -152,12 +156,7 @@ public class GameManager : MonoBehaviour {
         this.timeLastEmit = 0;
         this.flyingBlock = null;
     }
-    public Block GetNewBlock()
-    {
-        Block newBlock = Instantiate<Block>(sampleBlock, Vector3.zero, Quaternion.identity);
-        newBlock.Init();
-        return newBlock;
-    }
+    
 
 
     void EmitBlock()
@@ -166,13 +165,15 @@ public class GameManager : MonoBehaviour {
 
         ///Setup new block
         blockCounter++;
-        Block newBlock = GetNewBlock();
-        newBlock.name = "block-" + blockCounter;
+        Block newBlock = blockPool.GetBlock();
+        
+        newBlock.name = "flying-block-" + blockCounter;
         Rigidbody blockBody = newBlock.GetComponent<Rigidbody>();
         blockBody.mass = 0.1f;
         blockBody.useGravity = false;
         blockBody.isKinematic = false;
-        
+        newBlock.SetActive();
+
         ///a little higher than emiter
         Vector3 newPos = this.leftEmiter.transform.position;
         newPos.y += newBlock.transform.localScale.y/2;
@@ -277,6 +278,10 @@ public class GameManager : MonoBehaviour {
     {
         Debug.Log("HandleBlockOnGround: " + target.transform.gameObject.name);
         EndGame();
+    }
+    public void HandleBlockDisappear(Block block)
+    {
+        Destroy(block);
     }
     public void HandleBlockOnBlock(Block actor, Block target, Collision collision)
     {

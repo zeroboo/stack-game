@@ -13,8 +13,10 @@ public class Block : MonoBehaviour {
     string blockName;
 
     Collision lastCollision;
-
-
+    int type = BLOCK_TYPE_PLAY;
+    
+    public const int BLOCK_TYPE_PLAY = 1;
+    public const int BLOCK_TYPE_DEBRIS = 2;
     public void Init()
     {
         isOnStack = false;
@@ -152,6 +154,11 @@ public class Block : MonoBehaviour {
         get { return this.IsOnGround; }
         set { this.IsOnGround = value; }
     }
+
+    public int GetBlockType
+    {
+        get { return this.type; }
+    }
     public void OnDrawGizmos()
     {
         MeshFilter mesh = GetComponent<MeshFilter>();
@@ -167,4 +174,31 @@ public class Block : MonoBehaviour {
         Gizmos.DrawCube(transform.TransformPoint(mesh.sharedMesh.vertices[7]), new Vector3(0.1f, 0.1f, 0.1f));
        
     }
+
+    public void SetActive()
+    {
+        this.gameObject.active = true;
+        this.enabled = true;
+    }
+
+    public void SetInactive()
+    {
+        this.gameObject.active = false;
+    }
+
+    public bool IsActive()
+    {
+        return this.gameObject.active;
+    }
+
+    public void SetBlockTypePlay()
+    {
+        this.type = BLOCK_TYPE_PLAY;
+    }
+    public void SetBlockTypeDebris()
+    {
+        this.type = BLOCK_TYPE_PLAY;
+    }
+
+
 }
