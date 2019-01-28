@@ -34,7 +34,6 @@ public class GameManager : MonoBehaviour {
     [SerializeField]
     GameObject ground;
 
-    List<Plane> blockWallPlane;
     [SerializeField]
     Text scoreText;
     [SerializeField]
@@ -56,6 +55,11 @@ public class GameManager : MonoBehaviour {
     int score;
     BlockPool blockPool;
 
+    [SerializeField]
+    Vector3 playgroundMax;
+    [SerializeField]
+    Vector3 playgroundMin;
+    
     public void Init()
     {
         this.config = GameConfig.CreateDefaultGameConfig();
@@ -67,22 +71,7 @@ public class GameManager : MonoBehaviour {
         this.blockStopped = new List<Block>();
         this.currentHeight = 0;
         this.topBlock = null;
-        this.blockWallPlane = new List<Plane>();
-
-        foreach(GameObject blockWall in GameObject.FindGameObjectsWithTag("BlockWall"))
-        {
-            MeshFilter mesh = blockWall.GetComponent<MeshFilter>();
-            Plane p = new Plane(blockWall.transform.TransformPoint(mesh.mesh.vertices[0])
-                , blockWall.transform.TransformPoint(mesh.mesh.normals[1])
-                , blockWall.transform.TransformPoint(mesh.mesh.normals[2])
-                );
-            Debug.Log(string.Format("WallCreated: {0}, {1}, {2}"
-                , blockWall.transform.TransformPoint(mesh.mesh.vertices[0])
-                , blockWall.transform.TransformPoint(mesh.mesh.vertices[1])
-                , blockWall.transform.TransformPoint(mesh.mesh.vertices[2])));
-            this.blockWallPlane.Add(p);
-        }
-        Debug.Log("Planes: " + this.blockWallPlane.Count);
+        
 
         StartPlayGame();
     }
@@ -102,6 +91,7 @@ public class GameManager : MonoBehaviour {
         
         ///Setup first block
         Block genesisBlock = blockPool.GetPlayingBlock();
+        
         genesisBlock.SetActive();
 
         Vector3 pos = this.fallingPoint;
@@ -130,7 +120,8 @@ public class GameManager : MonoBehaviour {
                     ///Debug.Log("Flying block distance: " + distance);
                     if (distance > config.MaxBlockTravelDistance)
                     {
-                        this.flyingBlock.StopFlying();
+                        Vector3 vel = this.flyingBlock.gameObject.GetComponent<Rigidbody>().velocity * -1;
+                        this.flyingBlock.gameObject.GetComponent<Rigidbody>().velocity = vel;
                     }
 
                     ///Falling to ground: die
@@ -139,6 +130,53 @@ public class GameManager : MonoBehaviour {
                         HandleBlockOnGround(this.flyingBlock);
                         this.flyingBlock = null;
                     }
+                    if (this.playState == GamePlayState.Prepare)
+        {
+            if (Time.time - timeStartPlay > config.StatePlayingPrepareSecond)
+            {
+                Debug.Log("UpdatePlaying: Prepare done, go to Playing!");
+                StartGamePlayingState();
+
+            }
+        }
+        else if (this.playState == GamePlayState.Playing)
+        {
+            if (Time.time - this.timeLastEmit > config.BlockEmitIntervalSecond && this.flyingBlock == null)
+            {
+                EmitBlock();
+                UpdateEmiterPosition();
+            }
+
+            ///User stop flying block
+            if (this.flyingBlock != null && this.flyingBlock.IsFlying)
+            {
+                Debug.Log("InputAxis: " + Input.GetAxis("Jump"));
+                if (Input.GetAxis("Jump") == 1)
+                {
+                    this.flyingBlock.StopFlying();
+                }
+                blockStopped.Add(this.flyingBlock);
+
+                
+            }
+
+            if (this.flyingBlock != null)
+            {
+                if (!this.flyingBlock.IsFlying && !this.flyingBlock.IsFalling)
+                {
+                     this.flyingBlock.StartFalling();
+                }
+
+                if (this.flyingBlock.IsOnStack)
+                {
+                    this.flyingBlock = null;
+                    this.timeLastEmit = Time.time;
+                }
+            }
+
+
+            Debug.Log(string.Format("Playing: {0}", this.flyingBlock.ToString()));
+        }
                 }
             }
         }
@@ -165,14 +203,23 @@ public class GameManager : MonoBehaviour {
 
         ///Setup new block
         blockCounter++;
-        Block newBlock = blockPool.GetPlayingBlock();
+        
+        Block newBlock = null;
+        if (this.blockStack.Count >= 1)
+        {
+            newBlock = blockPool.GetPlayingBlock(this.blockStack[this.blockStack.Count-1]);
+        }
+        else {
+            newBlock = blockPool.GetPlayingBlock();
+        }
+        
         
         newBlock.name = "flying-block-" + blockCounter;
         newBlock.SetActive();
 
         ///a little higher than emiter
         Vector3 newPos = this.leftEmiter.transform.position;
-        newPos.y += newBlock.transform.localScale.y/2 + 0.1f;
+        newPos.y += newBlock.transform.localScale.y / 2 + 0.05f;
         newBlock.transform.position = newPos;
         Debug.Log(string.Format("EmitBlock: emitter={0}, newBlock={1}", newBlock.transform.position.ToString(), newBlock.transform.position));
 
@@ -182,11 +229,16 @@ public class GameManager : MonoBehaviour {
 
         ///Fly bro
         Rigidbody blockBody = newBlock.GetComponent<Rigidbody>();
-        blockBody.mass = 0.1f;
+        ///blockBody.mass = 0.1f;
         blockBody.useGravity = false;
         blockBody.isKinematic = true;
-
-        blockBody.velocity = this.leftEmiter.EmitDirection * config.EmitForce;
+        blockBody.angularVelocity = Vector3.zero;
+        float force = (config.EmitForce + score * config.IncreaseForcePerPoint);
+        if (force > config.EmitForceMax)
+        {
+            force = config.EmitForceMax;
+        }
+        blockBody.velocity = this.leftEmiter.EmitDirection * force;
         ///blockBody.AddForce(this.leftEmiter.EmitDirection * config.EmitForce, ForceMode.Impulse);
 
 
@@ -261,8 +313,10 @@ public class GameManager : MonoBehaviour {
                 }
             }
 
-
-            Debug.Log(string.Format("Playing: {0}", this.flyingBlock.ToString()));
+            if (this.flyingBlock != null)
+            {
+                Debug.Log(string.Format("Playing: {0}", this.flyingBlock.ToString()));
+            }
         }
     }
 
@@ -286,6 +340,7 @@ public class GameManager : MonoBehaviour {
         newBlock.OnBlockListener.RemoveAllListeners();
         this.blockStack.Add(newBlock);
         this.topBlock = newBlock;
+        Camera.main.GetComponent<Cameraman>().SetFocusBlock(this.topBlock);
         Debug.Log(string.Format("AddNewBlockToStack: {0}, flying={1}, onStack={2}, top={3}", newBlock.name, newBlock.IsFlying, newBlock.IsOnStack, topBlock));
         ///Calculate emitters position
         UpdateEmiterPosition();
@@ -314,9 +369,11 @@ public class GameManager : MonoBehaviour {
         if (target == topBlock)
         {
             score += 1;
+            actor.GetComponent<Rigidbody>().velocity = Vector3.zero;
+            actor.GetComponent<Rigidbody>().isKinematic = true;
             AddNewBlockToStack(actor);
 
-            TrimBlockToCollision(actor, target, collision);
+            TrimBlockToCollision(actor, target, collision, this.blockPool);
         }
         else {
             Debug.Log(string.Format("HandleBlockOnBlock: {0} on {1}, top block is {2}, go to hell"
@@ -325,10 +382,10 @@ public class GameManager : MonoBehaviour {
                         , topBlock.transform.gameObject.name));
         }
     }
-    public void TrimBlockToCollision(Block target, Block pattern, Collision collision)
+    public void TrimBlockToCollision(Block target, Block pattern, Collision collision, BlockPool blockPool)
     {
         Debug.Log(string.Format("TrimBlockToCollision: {0}, {1}", target.name, pattern.name));
-        UtilCube.TrimBlockToCollision(target, pattern, collision);
+        UtilCube.TrimBlockToCollision(target, pattern, collision, blockPool);
     }
     public void OnDrawGizmos()
     {

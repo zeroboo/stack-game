@@ -19,6 +19,8 @@ public class Block : MonoBehaviour {
     
     public const int BLOCK_TYPE_PLAY = 1;
     public const int BLOCK_TYPE_DEBRIS = 2;
+    float currentSpeed = 10f;
+    
     public void Init()
     {
         isOnStack = false;
@@ -62,15 +64,17 @@ public class Block : MonoBehaviour {
     {
         this.isFalling = true;
         
-        Vector3 newVelocity = Vector3.down * 10;
+        Vector3 newVelocity = Vector3.down * 1;
         body.velocity = newVelocity;
+        body.angularVelocity = Vector3.zero;
+        body.angularDrag = 0;
         
         Debug.Log(string.Format("StartFalling: {0}", body.velocity));
     }
     public void SetOnStack()
     {
         this.isOnStack = true;
-      
+        body.isKinematic = true;
     }
     void ProcessCollision(Collision collision)
     {
@@ -83,11 +87,11 @@ public class Block : MonoBehaviour {
         if (!this.isFlying && !this.isOnStack)
         {
             body = GetComponent<Rigidbody>();
-
+            body.isKinematic = true;
             if (collision.gameObject.tag.Equals("Ground"))
             {
                 isOnGround = true;
-                body.isKinematic = true;
+                
                 if (onGroundListener != null)
                 {
                     onGroundListener.Invoke(this);
@@ -95,7 +99,6 @@ public class Block : MonoBehaviour {
             }
             else if (collision.gameObject.tag.Equals("Block"))
             {
-                body.isKinematic = true;
                 Block targetBlock = collision.gameObject.GetComponent<Block>();
                 if (onBlockListener != null)
                 {

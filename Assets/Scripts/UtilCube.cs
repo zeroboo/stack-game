@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class UtilCube {
 
-    public static void TrimBlockToCollision(Block target, Block pattern, Collision collision)
+    public static void TrimBlockToCollision(Block target, Block pattern, Collision collision, BlockPool blockPool=null)
     {
         Debug.Log(string.Format("TrimBlockToCollision: {0}, {1}, contact={2}", target.name, pattern.name, collision.contacts.Length));
         for (int i = 0; i < collision.contacts.Length; i++)
@@ -19,22 +19,22 @@ public class UtilCube {
         float minZ = GetMinWorldZ(pattern);
         Debug.Log(string.Format("Pattern limitation: maxX={0}, maxZ={1}", maxX, maxZ));
 
-        TrimMaxX(target, maxX);
-        TrimMinX(target, minX);
+        TrimMaxX(target, maxX, blockPool);
+        TrimMinX(target, minX, blockPool);
 
-        TrimMaxZ(target, maxZ);
-        TrimMinZ(target, minZ);
+        TrimMaxZ(target, maxZ, blockPool);
+        TrimMinZ(target, minZ, blockPool);
 
 
     }
-    public static void TrimMaxZ(Block target, float maxZ)
+    public static void TrimMaxZ(Block target, float maxZ, BlockPool blockPool = null)
     {
         if (NeedTrimMaxZ(target, maxZ))
         {
             MeshFilter meshFilterTarget = target.gameObject.GetComponent<MeshFilter>();
             Vector3[] targetVertices = meshFilterTarget.mesh.vertices;
 
-            Block cutOff = GameObject.Instantiate(target);
+            Block cutOff = GetBlockFromPool(blockPool, target);
             Vector3 pos = target.transform.position;
             cutOff.transform.position = pos;
             cutOff.transform.localScale = target.transform.localScale;
@@ -72,14 +72,32 @@ public class UtilCube {
         body.isKinematic = false;
         body.useGravity = true;
     }
-    public static void TrimMinZ(Block target, float minZ)
+    public static void DestroyBlock(Block aBlock) { 
+        GameObject.Destroy(aBlock);
+    }
+    public static Block GetBlockFromPool(BlockPool pool, Block sample)
+    {
+        if (pool != null)
+        {
+            Block newBlock = pool.GetDebrisBlock(sample);
+            newBlock.OnGroundListener.AddListener(pool.ReturnBlock);
+            return newBlock;
+        }
+        else
+        {
+            Block newBlock = GameObject.Instantiate(sample);
+            newBlock.OnGroundListener.AddListener(DestroyBlock);
+            return newBlock;
+        }
+    }
+    public static void TrimMinZ(Block target, float minZ, BlockPool blockPool = null)
     {
         if (NeedTrimMinZ(target, minZ))
         {
             MeshFilter meshFilterTarget = target.gameObject.GetComponent<MeshFilter>();
             Vector3[] targetVertices = meshFilterTarget.mesh.vertices;
 
-            Block cutOff = GameObject.Instantiate(target);
+            Block cutOff = GetBlockFromPool(blockPool, target);
             Vector3 pos = target.transform.position;
             cutOff.transform.position = pos;
             cutOff.transform.localScale = target.transform.localScale;
@@ -259,13 +277,13 @@ public class UtilCube {
         return needTrim;
     }
 
-    public static void TrimMaxX(Block target, float maxX)
+    public static void TrimMaxX(Block target, float maxX, BlockPool blockPool=null)
     {
         if (NeedTrimMaxX(target, maxX))
         {
             MeshFilter meshFilterTarget = target.gameObject.GetComponent<MeshFilter>();
             Vector3[] targetVertices = meshFilterTarget.mesh.vertices;
-            Block cutOff = GameObject.Instantiate(target);
+            Block cutOff = GetBlockFromPool(blockPool, target);
             //cutOff.transform.position = target.transform.position;
             //Vector3[] cutOffVertices = targetVertices;
             ///GameObject cutOff = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -299,13 +317,13 @@ public class UtilCube {
             MakeBlockFallStatic(cutOff);
         }
     }
-    public static void TrimMinX(Block target, float minX)
+    public static void TrimMinX(Block target, float minX, BlockPool blockPool = null)
     {
         if (NeedTrimMinX(target, minX))
         {
             MeshFilter meshFilterTarget = target.gameObject.GetComponent<MeshFilter>();
             Vector3[] targetVertices = meshFilterTarget.mesh.vertices;
-            Block cutOff = GameObject.Instantiate(target);
+            Block cutOff = GetBlockFromPool(blockPool, target);
             //cutOff.transform.position = target.transform.position;
             //Vector3[] cutOffVertices = targetVertices;
             ///GameObject cutOff = GameObject.CreatePrimitive(PrimitiveType.Cube);
