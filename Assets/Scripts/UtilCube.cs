@@ -13,72 +13,121 @@ public class UtilCube {
         }
 
         float maxX = GetMaxWorldX(pattern);
+        float minX = GetMinWorldX(pattern);
+
         float maxZ = GetMaxWorldZ(pattern);
+        float minZ = GetMinWorldZ(pattern);
         Debug.Log(string.Format("Pattern limitation: maxX={0}, maxZ={1}", maxX, maxZ));
-        MeshFilter meshFilterTarget = target.gameObject.GetComponent<MeshFilter>();
-        Vector3[] targetVertices = meshFilterTarget.mesh.vertices;
-        if (NeedTrimMaxX(target, maxX))
+
+        TrimMaxX(target, maxX);
+        TrimMinX(target, minX);
+
+        TrimMaxZ(target, maxZ);
+        TrimMinZ(target, minZ);
+
+
+    }
+    public static void TrimMaxZ(Block target, float maxZ)
+    {
+        if (NeedTrimMaxZ(target, maxZ))
         {
+            MeshFilter meshFilterTarget = target.gameObject.GetComponent<MeshFilter>();
+            Vector3[] targetVertices = meshFilterTarget.mesh.vertices;
+
             Block cutOff = GameObject.Instantiate(target);
-            //cutOff.transform.position = target.transform.position;
-            //Vector3[] cutOffVertices = targetVertices;
-            ///GameObject cutOff = GameObject.CreatePrimitive(PrimitiveType.Cube);
             Vector3 pos = target.transform.position;
-            
             cutOff.transform.position = pos;
             cutOff.transform.localScale = target.transform.localScale;
-            Vector3[] cutOffVertices = meshFilterTarget.mesh.vertices;
 
+            ///Create vertices for cutoff block
+            Vector3[] cutOffVertices = meshFilterTarget.mesh.vertices;
             for (int i = 0; i < targetVertices.Length; i++)
             {
                 Vector3 worldPos = target.transform.TransformPoint(targetVertices[i]);
-                if (worldPos.x > maxX)
+                if (worldPos.z > maxZ)
                 {
                     cutOffVertices[i] = cutOff.transform.InverseTransformPoint(worldPos);
-                    targetVertices[i] = target.transform.InverseTransformPoint(new Vector3(maxX, worldPos.y, worldPos.z));
-                    Debug.Log("- Trim vertex by maxX: " + i);
+                    targetVertices[i] = target.transform.InverseTransformPoint(new Vector3(worldPos.x, worldPos.y, maxZ));
+                    Debug.Log("- Trim vertex by maxZ: " + i);
                 }
-                else {
-                    cutOffVertices[i] = cutOff.transform.InverseTransformPoint(new Vector3(maxX, worldPos.y, worldPos.z));
+                else
+                {
+                    cutOffVertices[i] = cutOff.transform.InverseTransformPoint(new Vector3(worldPos.x, worldPos.y, maxZ));
                 }
             }
-            meshFilterTarget.mesh.RecalculateBounds();
-            meshFilterTarget.mesh.RecalculateNormals();
-            meshFilterTarget.mesh.RecalculateTangents();
 
-            Bounds bounds = meshFilterTarget.mesh.bounds;
-            BoxCollider collider = target.gameObject.AddComponent<BoxCollider>();
+            ///Recalculate target block
+            ApplyNewVerticesToMesh(meshFilterTarget, targetVertices);
+           
+            ///Recalculate cutoff 
+            ApplyNewVerticesToMesh(cutOff.GetComponent<MeshFilter>(), cutOffVertices);
+            MakeBlockFallStatic(cutOff);
+        }
+    }
+    public static void MakeBlockFallStatic(Block aBlock)
+    {
+        Rigidbody body = aBlock.GetComponent<Rigidbody>();
+        body.GetComponent<BoxCollider>().enabled = false;
+        body.mass = 1;
+        body.isKinematic = false;
+        body.useGravity = true;
+    }
+    public static void TrimMinZ(Block target, float minZ)
+    {
+        if (NeedTrimMinZ(target, minZ))
+        {
+            MeshFilter meshFilterTarget = target.gameObject.GetComponent<MeshFilter>();
+            Vector3[] targetVertices = meshFilterTarget.mesh.vertices;
+
+            Block cutOff = GameObject.Instantiate(target);
+            Vector3 pos = target.transform.position;
+            cutOff.transform.position = pos;
+            cutOff.transform.localScale = target.transform.localScale;
+
+            ///Create vertices for cutoff block
+            Vector3[] cutOffVertices = meshFilterTarget.mesh.vertices;
+            for (int i = 0; i < targetVertices.Length; i++)
+            {
+                Vector3 worldPos = target.transform.TransformPoint(targetVertices[i]);
+                if (worldPos.z < minZ)
+                {
+                    cutOffVertices[i] = cutOff.transform.InverseTransformPoint(worldPos);
+                    targetVertices[i] = target.transform.InverseTransformPoint(new Vector3(worldPos.x, worldPos.y, minZ));
+                    Debug.Log("- Trim vertex by minZ: " + i);
+                }
+                else
+                {
+                    cutOffVertices[i] = cutOff.transform.InverseTransformPoint(new Vector3(worldPos.x, worldPos.y, minZ));
+                }
+            }
+
+            ///Recalculate target block
+            ApplyNewVerticesToMesh(meshFilterTarget, targetVertices);
+
+            ///Recalculate cutoff 
+            ApplyNewVerticesToMesh(cutOff.GetComponent<MeshFilter>(), cutOffVertices);
+            MakeBlockFallStatic(cutOff);
+        }
+    }
+    public static void ApplyNewVerticesToMesh(MeshFilter meshFilter, Vector3[] newVertices)
+    {
+        meshFilter.mesh.vertices = newVertices;
+        meshFilter.mesh.RecalculateBounds();
+        meshFilter.mesh.RecalculateNormals();
+        meshFilter.mesh.RecalculateTangents();
+
+        Bounds bounds = meshFilter.mesh.bounds;
+        BoxCollider collider = meshFilter.gameObject.GetComponent<BoxCollider>();
+        if (collider != null)
+        {
             collider.center = bounds.center;
             collider.size = bounds.size;
-
-            cutOff.GetComponent<MeshFilter>().mesh.vertices = cutOffVertices;
-            cutOff.GetComponent<MeshFilter>().mesh.RecalculateBounds();
-            cutOff.GetComponent<MeshFilter>().mesh.RecalculateNormals();
-            cutOff.GetComponent<MeshFilter>().mesh.RecalculateTangents();
-
-            Rigidbody cutOffBody = cutOff.GetComponent<Rigidbody>();
-            cutOffBody.GetComponent<BoxCollider>().enabled = false;
-            cutOffBody.mass = 1;
-            cutOffBody.isKinematic = false;
-            cutOffBody.useGravity = true;
         }
-
-        for (int i = 0; i < targetVertices.Length; i++)
-        {
-            Vector3 worldPos = target.transform.TransformPoint(targetVertices[i]);
-            if (worldPos.z > maxZ)
-            {
-                targetVertices[i] = target.transform.InverseTransformPoint(new Vector3(worldPos.x, worldPos.y, maxZ));
-                Debug.Log("- Trim vertex by maxZ: " + i);
-            }
-
-        }
-        meshFilterTarget.mesh.vertices = targetVertices;
+        
     }
-
     public static float GetMaxWorldX(Block aBlock)
     {
-        float maxX = 0;
+        float maxX = float.MinValue ;
         MeshFilter meshFilter = aBlock.gameObject.GetComponent<MeshFilter>();
         Vector3[] vertices = meshFilter.mesh.vertices;
 
@@ -92,9 +141,27 @@ public class UtilCube {
         }
         return maxX;
     }
+
+    public static float GetMinWorldX(Block aBlock)
+    {
+        float minX = float.MaxValue;
+        MeshFilter meshFilter = aBlock.gameObject.GetComponent<MeshFilter>();
+        Vector3[] vertices = meshFilter.mesh.vertices;
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            Vector3 worldPos = aBlock.transform.TransformPoint(vertices[i]);
+            if (worldPos.x < minX)
+            {
+                minX = worldPos.x;
+            }
+        }
+        return minX;
+    }
+
     public static float GetMaxWorldZ(Block aBlock)
     {
-        float maxZ = 0;
+        float maxZ = float.MinValue;
         MeshFilter meshFilter = aBlock.gameObject.GetComponent<MeshFilter>();
         Vector3[] vertices = meshFilter.mesh.vertices;
 
@@ -108,6 +175,23 @@ public class UtilCube {
         }
         return maxZ;
     }
+    public static float GetMinWorldZ(Block aBlock)
+    {
+        float minZ = float.MaxValue;
+        MeshFilter meshFilter = aBlock.gameObject.GetComponent<MeshFilter>();
+        Vector3[] vertices = meshFilter.mesh.vertices;
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            Vector3 worldPos = aBlock.transform.TransformPoint(vertices[i]);
+            if (worldPos.z < minZ)
+            {
+                minZ = worldPos.z;
+            }
+        }
+        return minZ;
+    }
+
     public static bool NeedTrimMaxX(Block aBlock, float maxX)
     {
         MeshFilter meshFilterTarget = aBlock.gameObject.GetComponent<MeshFilter>();
@@ -118,8 +202,6 @@ public class UtilCube {
             Vector3 worldPos = aBlock.transform.TransformPoint(targetVertices[i]);
             if (worldPos.x > maxX)
             {
-                targetVertices[i] = aBlock.transform.InverseTransformPoint(new Vector3(maxX, worldPos.y, worldPos.z));
-                Debug.Log("- Trim vertex by maxX: " + i);
                 needTrim = true;
                 break;
             }
@@ -127,4 +209,134 @@ public class UtilCube {
         return needTrim;
     }
 
+    public static bool NeedTrimMinX(Block aBlock, float minX)
+    {
+        MeshFilter meshFilterTarget = aBlock.gameObject.GetComponent<MeshFilter>();
+        Vector3[] targetVertices = meshFilterTarget.mesh.vertices;
+        bool needTrim = false;
+        for (int i = 0; i < targetVertices.Length; i++)
+        {
+            Vector3 worldPos = aBlock.transform.TransformPoint(targetVertices[i]);
+            if (worldPos.x < minX)
+            {
+                needTrim = true;
+                break;
+            }
+        }
+        return needTrim;
+    }
+
+    public static bool NeedTrimMaxZ(Block aBlock, float maxZ)
+    {
+        MeshFilter meshFilterTarget = aBlock.gameObject.GetComponent<MeshFilter>();
+        Vector3[] targetVertices = meshFilterTarget.mesh.vertices;
+        bool needTrim = false;
+        for (int i = 0; i < targetVertices.Length; i++)
+        {
+            Vector3 worldPos = aBlock.transform.TransformPoint(targetVertices[i]);
+            if (worldPos.z > maxZ)
+            {
+                needTrim = true;
+                break;
+            }
+        }
+        return needTrim;
+    }
+    public static bool NeedTrimMinZ(Block aBlock, float minZ)
+    {
+        MeshFilter meshFilterTarget = aBlock.gameObject.GetComponent<MeshFilter>();
+        Vector3[] targetVertices = meshFilterTarget.mesh.vertices;
+        bool needTrim = false;
+        for (int i = 0; i < targetVertices.Length; i++)
+        {
+            Vector3 worldPos = aBlock.transform.TransformPoint(targetVertices[i]);
+            if (worldPos.z < minZ)
+            {
+                needTrim = true;
+                break;
+            }
+        }
+        return needTrim;
+    }
+
+    public static void TrimMaxX(Block target, float maxX)
+    {
+        if (NeedTrimMaxX(target, maxX))
+        {
+            MeshFilter meshFilterTarget = target.gameObject.GetComponent<MeshFilter>();
+            Vector3[] targetVertices = meshFilterTarget.mesh.vertices;
+            Block cutOff = GameObject.Instantiate(target);
+            //cutOff.transform.position = target.transform.position;
+            //Vector3[] cutOffVertices = targetVertices;
+            ///GameObject cutOff = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Vector3 pos = target.transform.position;
+            cutOff.transform.position = pos;
+            cutOff.transform.localScale = target.transform.localScale;
+
+            ///Create vertices for cutoff block
+            Vector3[] cutOffVertices = meshFilterTarget.mesh.vertices;
+            for (int i = 0; i < targetVertices.Length; i++)
+            {
+                Vector3 worldPos = target.transform.TransformPoint(targetVertices[i]);
+                if (worldPos.x > maxX)
+                {
+                    cutOffVertices[i] = cutOff.transform.InverseTransformPoint(worldPos);
+                    targetVertices[i] = target.transform.InverseTransformPoint(new Vector3(maxX, worldPos.y, worldPos.z));
+                    Debug.Log("- Trim vertex by maxX: " + i);
+                }
+                else
+                {
+                    cutOffVertices[i] = cutOff.transform.InverseTransformPoint(new Vector3(maxX, worldPos.y, worldPos.z));
+                }
+            }
+
+            ///Recalculate target block
+            ApplyNewVerticesToMesh(meshFilterTarget, targetVertices);
+
+            ///Recalculate cutoff 
+            ApplyNewVerticesToMesh(cutOff.GetComponent<MeshFilter>(), cutOffVertices);
+
+            MakeBlockFallStatic(cutOff);
+        }
+    }
+    public static void TrimMinX(Block target, float minX)
+    {
+        if (NeedTrimMinX(target, minX))
+        {
+            MeshFilter meshFilterTarget = target.gameObject.GetComponent<MeshFilter>();
+            Vector3[] targetVertices = meshFilterTarget.mesh.vertices;
+            Block cutOff = GameObject.Instantiate(target);
+            //cutOff.transform.position = target.transform.position;
+            //Vector3[] cutOffVertices = targetVertices;
+            ///GameObject cutOff = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Vector3 pos = target.transform.position;
+            cutOff.transform.position = pos;
+            cutOff.transform.localScale = target.transform.localScale;
+
+            ///Create vertices for cutoff block
+            Vector3[] cutOffVertices = meshFilterTarget.mesh.vertices;
+            for (int i = 0; i < targetVertices.Length; i++)
+            {
+                Vector3 worldPos = target.transform.TransformPoint(targetVertices[i]);
+                if (worldPos.x < minX)
+                {
+                    cutOffVertices[i] = cutOff.transform.InverseTransformPoint(worldPos);
+                    targetVertices[i] = target.transform.InverseTransformPoint(new Vector3(minX, worldPos.y, worldPos.z));
+                    Debug.Log("- Trim vertex by maxX: " + i);
+                }
+                else
+                {
+                    cutOffVertices[i] = cutOff.transform.InverseTransformPoint(new Vector3(minX, worldPos.y, worldPos.z));
+                }
+            }
+
+            ///Recalculate target block
+            ApplyNewVerticesToMesh(meshFilterTarget, targetVertices);
+
+            ///Recalculate cutoff 
+            ApplyNewVerticesToMesh(cutOff.GetComponent<MeshFilter>(), cutOffVertices);
+
+            MakeBlockFallStatic(cutOff);
+        }
+    }
 }

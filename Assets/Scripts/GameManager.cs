@@ -172,6 +172,7 @@ public class GameManager : MonoBehaviour {
         blockBody.mass = 0.1f;
         blockBody.useGravity = false;
         blockBody.isKinematic = false;
+        
         ///a little higher than emiter
         Vector3 newPos = this.leftEmiter.transform.position;
         newPos.y += newBlock.transform.localScale.y/2;
@@ -224,7 +225,7 @@ public class GameManager : MonoBehaviour {
         {
             if (Time.time - this.timeLastEmit > config.BlockEmitIntervalSecond && this.flyingBlock == null)
             {
-                ///EmitBlock();
+                EmitBlock();
                 UpdateEmiterPosition();
             }
 
@@ -300,19 +301,7 @@ public class GameManager : MonoBehaviour {
     public void TrimBlockToCollision(Block target, Block pattern, Collision collision)
     {
         Debug.Log(string.Format("TrimBlockToCollision: {0}, {1}", target.name, pattern.name));
-        for (int i = 0; i < collision.contacts.Length; i++)
-        {
-            Debug.Log(string.Format("\t- CollisionContact: {0}", collision.contacts[i].point));
-        }
-        
-        ///Debug.DrawRay(collision.contacts[0].point, collision.contacts[1].point, Color.blue, 600, true);
-
-        Debug.DrawLine(collision.contacts[0].point, collision.contacts[2].point, Color.red, 600, true);
-        Debug.DrawLine(collision.contacts[1].point, collision.contacts[2].point, Color.green, 600, true);
-        Debug.DrawLine(collision.contacts[1].point, collision.contacts[3].point, Color.blue, 600, true);
-        Debug.DrawLine(collision.contacts[0].point, collision.contacts[3].point, Color.yellow, 600, true);
-
-
+        UtilCube.TrimBlockToCollision(target, pattern, collision);
     }
     public void OnDrawGizmos()
     {
